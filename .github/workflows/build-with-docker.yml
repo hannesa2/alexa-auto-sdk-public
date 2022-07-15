@@ -1,0 +1,31 @@
+name: Build Android
+
+on:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  dockerRun:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: [ 'focal' ]
+    container: hannesa2/alexa-auto-${{ matrix.ubuntu }}-4:pr-1 # https://hub.docker.com/repository/docker/hannesa2/alexa-auto-focal-4
+    steps:
+      - name: investigate
+        run: |
+          pwd
+          whoami
+          ls -la
+          id -u
+      - name: Checkout
+        uses: actions/checkout@v3.0.2
+      - name: Build with Docker
+        run: |
+          cd aacs/android/sample-app
+          ./gradlew assembleLocalRelease -PcleanDeps -PacceptLicenses -Parch=armv8 -PacceptLicenses=true -PconanOptions=aac-module-amazonlite:default_model=X_125k.en-US.alexa+bmw+mini.cpp,pryon-lite:package_suffix=alexa-custom-assistant,aac-module-local-voice-control:with_coassistant=True
