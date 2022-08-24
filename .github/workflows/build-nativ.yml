@@ -45,7 +45,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/python python /usr/bin/${{ matrix.python }} 1
           sudo update-alternatives --set python /usr/bin/${{ matrix.python }}
           pip install -U pip
-          pip install conan
+          pip install conan==1.50.2
           conan profile new default --detect
           conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Verbose
