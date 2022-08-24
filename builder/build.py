@@ -35,9 +35,11 @@ def parse_arguments():
             logging.exception( f"\033[1;31mERROR: {ex}" )
         else:
             logging.error( f"\033[1;31mERROR: {ex}" )
+            return 1
 
     #reset the terminal font
     print("\033[0m")
+    return 0
 
 def add_common_arguments( parser ):
 
@@ -318,4 +320,5 @@ if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] 
     raise Exception(f"Unsupported Python version: {sys.version} (require Python >=3.7)")
 
 # run the argument parser
-parse_arguments()
+return_code =parse_arguments()
+sys.exit(return_code)
