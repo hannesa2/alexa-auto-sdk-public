@@ -1,0 +1,116 @@
+name: PythonBuild
+
+on:
+  push:
+    branches:
+      - 'development'
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  nativ_x86:
+    name: nativ on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-18.04 ]
+        abi: [ armv8 ]
+        python: [ python3.7 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Install Android SDK
+        uses: malinskiy/action-android/install-sdk@release/0.1.4
+      - name: Find Tag
+        id: tagger
+        uses: jimschubert/query-tag-action@v2
+        with:
+          skip-unshallow: 'true'
+          abbrev: false
+          commit-ish: HEAD
+      - name: Explain why this job ran
+        run: echo ${{ github.event_name }} ${{ github.ref }} event triggered this step.
+      - name: Install Ubuntu
+        run: |
+          sudo apt install -y build-essential libssl-dev
+          sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl
+          sudo apt install -y ${{ matrix.python }}
+      - name: Install python ${{ matrix.python }}
+        run: |
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/${{ matrix.python }} 1
+          sudo update-alternatives --set python /usr/bin/${{ matrix.python }}
+          pip install -U pip
+          pip install conan
+          conan profile new default --detect
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Verbose
+        run: |
+          python --version
+          conan --version
+          cmake --version
+      - name: Build ${{ matrix.os }} ${{ matrix.abi }} ${{ matrix.python }}
+        run: |
+          python ./builder/build.py -p android -a ${{ matrix.abi }} --accept-licenses
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ success() }}
+        with:
+          name: Alexa-Auto-SDK.${{ matrix.abi }}.${{steps.tagger.outputs.tag}}.from.x86_64
+          path: builder/deploy/aac-*.tgz
+
+#  nativ_arm64:
+#    name: nativ on ${{ matrix.os }}
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: [ ARM64 ]
+#        abi: [ armv8 ]
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0
+#          submodules: recursive
+#      - name: Install Android SDK
+#        uses: malinskiy/action-android/install-sdk@release/0.1.4
+#      - run: sdkmanager platform-tools
+#      - name: Find Tag
+#        id: tagger
+#        uses: jimschubert/query-tag-action@v2
+#        with:
+#          skip-unshallow: 'true'
+#          abbrev: false
+#          commit-ish: HEAD
+#      - name: Explain why this job ran
+#        run: echo ${{ github.event_name }} ${{ github.ref }} event triggered this step.
+#      - name: Install python und build
+#        run: |
+#          eval "$(/opt/homebrew/bin/brew shellenv)"
+#          export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
+#          pip --version
+#          pip install -U pip
+#          pip install conan
+#          conan profile new default --detect || echo "Nothing to do"
+#          conan profile update settings.compiler.libcxx=libstdc++11 default
+#          python --version
+#          conan --version
+#          cmake --version
+#          java --version
+#          cd aacs/android/sample-app
+#          ./gradlew assembleLocalRelease -PcleanDeps -PacceptLicenses -Parch=${{ matrix.abi }} -PacceptLicenses=true -PconanOptions=aac-module-amazonlite:default_model=X_125k.en-US.alexa+bmw+mini.cpp,pryon-lite:package_suffix=alexa-custom-assistant,aac-module-local-voice-control:with_coassistant=True
+#      - name: Find apk
+#        run: find . -name "*.apk" | xargs ls -la
+#      - name: Find aar
+#        run: find ../.. -name "*.aar" | xargs ls -la
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v3
+#        if: ${{ success() }}
+#        with:
+#          name: Alexa-Auto-SDK.${{ matrix.abi }}.${{steps.tagger.outputs.tag}}.from.arm64
+#          path: builder/deploy/aac-*.tgz
