@@ -15,7 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu: [ 'focal' ]
-    container: hannesa2/alexa-auto-${{ matrix.ubuntu }}-4:pr-1 # https://hub.docker.com/repository/docker/hannesa2/alexa-auto-focal-4
+    container:
+      image: hannesa2/alexa-auto-${{ matrix.ubuntu }}-4:pr-1 # https://hub.docker.com/repository/docker/hannesa2/alexa-auto-focal-4
+      options: --user root
     steps:
       - name: investigate
         run: |
